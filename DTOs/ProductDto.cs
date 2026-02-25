@@ -23,6 +23,10 @@ namespace Medicine_exhibition_api.DTOs
         public IFormFile? Image { get; set; }
 
         public int StockQuantity { get; set; } = 0;
+
+        public DateTime? ExpiryDate { get; set; }
+
+        public int? CategoryId { get; set; }
     }
 
     public class UpdateProductDto
@@ -44,6 +48,10 @@ namespace Medicine_exhibition_api.DTOs
         public IFormFile? Image { get; set; }
 
         public int? StockQuantity { get; set; }
+
+        public DateTime? ExpiryDate { get; set; }
+
+        public int? CategoryId { get; set; }
     }
 
     public class ProductResponseDto
@@ -56,6 +64,9 @@ namespace Medicine_exhibition_api.DTOs
         public string? LocationInStore { get; set; }
         public string? ImageBase64 { get; set; }
         public int StockQuantity { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public int? CategoryId { get; set; }
+        public string? CategoryName { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

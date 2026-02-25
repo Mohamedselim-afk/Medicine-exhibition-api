@@ -11,6 +11,7 @@ namespace Medicine_exhibition_api.Data
         }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
@@ -27,10 +28,20 @@ namespace Medicine_exhibition_api.Data
                 entity.HasIndex(e => e.Email).IsUnique();
             });
 
+            // Configure Category
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.HasIndex(e => e.Name);
+            });
+
             // Configure Product
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.HasIndex(e => e.Name);
+                entity.HasOne(p => p.Category)
+                    .WithMany(c => c.Products)
+                    .HasForeignKey(p => p.CategoryId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Configure Invoice

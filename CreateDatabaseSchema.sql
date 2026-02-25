@@ -26,6 +26,10 @@ IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Produc
     DROP TABLE [dbo].[Products];
 GO
 
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Categories]') AND type in (N'U'))
+    DROP TABLE [dbo].[Categories];
+GO
+
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Users]') AND type in (N'U'))
     DROP TABLE [dbo].[Users];
 GO
@@ -63,6 +67,24 @@ PRINT 'Table Users created successfully';
 GO
 
 -- =============================================
+-- Table: Categories
+-- =============================================
+CREATE TABLE [dbo].[Categories] (
+    [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [Name] NVARCHAR(100) NOT NULL,
+    [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    [IsActive] BIT NOT NULL DEFAULT 1
+);
+GO
+
+CREATE INDEX [IX_Categories_Name] ON [dbo].[Categories]([Name]);
+CREATE INDEX [IX_Categories_IsActive] ON [dbo].[Categories]([IsActive]);
+GO
+
+PRINT 'Table Categories created successfully';
+GO
+
+-- =============================================
 -- Table: Products
 -- =============================================
 CREATE TABLE [dbo].[Products] (
@@ -75,9 +97,13 @@ CREATE TABLE [dbo].[Products] (
     [ImageData] VARBINARY(MAX) NULL,
     [ImageContentType] NVARCHAR(50) NULL,
     [StockQuantity] INT NOT NULL DEFAULT 0,
+    [ExpiryDate] DATETIME2 NULL,
+    [CategoryId] INT NULL,
     [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
     [UpdatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    [IsActive] BIT NOT NULL DEFAULT 1
+    [IsActive] BIT NOT NULL DEFAULT 1,
+    CONSTRAINT [FK_Products_Categories] FOREIGN KEY ([CategoryId])
+        REFERENCES [dbo].[Categories]([Id]) ON DELETE SET NULL
 );
 GO
 
@@ -85,6 +111,8 @@ GO
 CREATE INDEX [IX_Products_Name] ON [dbo].[Products]([Name]);
 CREATE INDEX [IX_Products_IsActive] ON [dbo].[Products]([IsActive]);
 CREATE INDEX [IX_Products_StockQuantity] ON [dbo].[Products]([StockQuantity]);
+CREATE INDEX [IX_Products_CategoryId] ON [dbo].[Products]([CategoryId]);
+CREATE INDEX [IX_Products_ExpiryDate] ON [dbo].[Products]([ExpiryDate]);
 GO
 
 PRINT 'Table Products created successfully';
@@ -176,10 +204,11 @@ PRINT 'Database schema created successfully!';
 PRINT '=============================================';
 PRINT 'Tables created:';
 PRINT '  1. Users';
-PRINT '  2. Products';
-PRINT '  3. Invoices';
-PRINT '  4. InvoiceItems';
-PRINT '  5. Notifications';
+PRINT '  2. Categories';
+PRINT '  3. Products';
+PRINT '  4. Invoices';
+PRINT '  5. InvoiceItems';
+PRINT '  6. Notifications';
 PRINT '';
 PRINT 'Note: Use /api/Auth/create-owner endpoint to create the first Owner account';
 PRINT '=============================================';

@@ -22,15 +22,23 @@ namespace Medicine_exhibition_api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts([FromQuery] string? search = null)
+        public async Task<IActionResult> GetAllProducts([FromQuery] string? search = null, [FromQuery] int? categoryId = null)
         {
             try
             {
-                var query = _context.Products.Where(p => p.IsActive).AsQueryable();
+                var query = _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.IsActive)
+                    .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(p => p.Name.Contains(search));
+                }
+
+                if (categoryId.HasValue && categoryId.Value > 0)
+                {
+                    query = query.Where(p => p.CategoryId == categoryId.Value);
                 }
 
                 var products = await query
@@ -47,6 +55,9 @@ namespace Medicine_exhibition_api.Controllers
                     LocationInStore = p.LocationInStore,
                     ImageBase64 = p.ImageData != null ? Convert.ToBase64String(p.ImageData) : null,
                     StockQuantity = p.StockQuantity,
+                    ExpiryDate = p.ExpiryDate,
+                    CategoryId = p.CategoryId,
+                    CategoryName = p.Category != null ? p.Category.Name : null,
                     CreatedAt = p.CreatedAt
                 }).ToList();
 
@@ -64,7 +75,9 @@ namespace Medicine_exhibition_api.Controllers
         {
             try
             {
-                var product = await _context.Products.FindAsync(id);
+                var product = await _context.Products
+                    .Include(p => p.Category)
+                    .FirstOrDefaultAsync(p => p.Id == id);
 
                 if (product == null || !product.IsActive)
                 {
@@ -81,6 +94,9 @@ namespace Medicine_exhibition_api.Controllers
                     LocationInStore = product.LocationInStore,
                     ImageBase64 = product.ImageData != null ? Convert.ToBase64String(product.ImageData) : null,
                     StockQuantity = product.StockQuantity,
+                    ExpiryDate = product.ExpiryDate,
+                    CategoryId = product.CategoryId,
+                    CategoryName = product.Category != null ? product.Category.Name : null,
                     CreatedAt = product.CreatedAt
                 };
 
@@ -112,6 +128,16 @@ namespace Medicine_exhibition_api.Controllers
                     }
                 }
 
+                DateTime? expiryDate = null;
+                var expiryStr = Request.Form["expiryDate"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(expiryStr) && DateTime.TryParse(expiryStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var parsedExpiry))
+                    expiryDate = parsedExpiry;
+
+                var categoryIdForm = Request.Form["categoryId"].FirstOrDefault();
+                int? categoryId = null;
+                if (!string.IsNullOrWhiteSpace(categoryIdForm) && int.TryParse(categoryIdForm, out var catId) && catId > 0)
+                    categoryId = catId;
+
                 var product = new Product
                 {
                     Name = dto.Name,
@@ -122,6 +148,8 @@ namespace Medicine_exhibition_api.Controllers
                     ImageData = imageData,
                     ImageContentType = imageContentType,
                     StockQuantity = dto.StockQuantity,
+                    ExpiryDate = expiryDate,
+                    CategoryId = categoryId,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     IsActive = true
@@ -169,6 +197,19 @@ namespace Medicine_exhibition_api.Controllers
 
                 if (dto.StockQuantity.HasValue)
                     product.StockQuantity = dto.StockQuantity.Value;
+
+                var expiryStr = Request.Form["expiryDate"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(expiryStr) && DateTime.TryParse(expiryStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var parsedExpiry))
+                    product.ExpiryDate = parsedExpiry;
+
+                var categoryIdForm = Request.Form["categoryId"].FirstOrDefault();
+                if (categoryIdForm != null)
+                {
+                    if (string.IsNullOrWhiteSpace(categoryIdForm) || !int.TryParse(categoryIdForm, out var catId) || catId <= 0)
+                        product.CategoryId = null;
+                    else
+                        product.CategoryId = int.Parse(categoryIdForm);
+                }
 
                 if (dto.Image != null && dto.Image.Length > 0)
                 {

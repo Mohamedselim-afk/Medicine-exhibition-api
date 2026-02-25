@@ -104,16 +104,20 @@ builder.Services.AddCors(options =>
 });
 
 // Configure Kestrel to listen on all interfaces (for mobile device access)
-builder.WebHost.UseUrls("http://localhost:5053", "http://0.0.0.0:5053");
+// Note: In production, the hosting provider (MonsterASP) will handle the URL binding
+// Uncomment the line below only for local development
+// builder.WebHost.UseUrls("http://localhost:5053", "http://0.0.0.0:5053");
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Enable Swagger in both Development and Production for easier API testing
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Medicine Exhibition API v1");
+    options.RoutePrefix = string.Empty; // Set Swagger UI at the root URL
+});
 
 app.UseHttpsRedirection();
 
